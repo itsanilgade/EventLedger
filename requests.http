@@ -1,0 +1,61 @@
+### Submit credit
+POST http://localhost:8080/events
+Content-Type: application/json
+X-Trace-Id: demo-trace-001
+
+{
+  "eventId": "evt-001",
+  "accountId": "acct-123",
+  "type": "CREDIT",
+  "amount": 150.00,
+  "currency": "USD",
+  "eventTimestamp": "2026-05-15T14:02:11Z",
+  "metadata": {
+    "source": "mainframe-batch",
+    "batchId": "B-9042"
+  }
+}
+
+### Submit earlier debit out of order
+POST http://localhost:8080/events
+Content-Type: application/json
+
+{
+  "eventId": "evt-000",
+  "accountId": "acct-123",
+  "type": "DEBIT",
+  "amount": 25.00,
+  "currency": "USD",
+  "eventTimestamp": "2026-05-14T10:00:00Z"
+}
+
+### Duplicate
+POST http://localhost:8080/events
+Content-Type: application/json
+
+{
+  "eventId": "evt-001",
+  "accountId": "acct-123",
+  "type": "CREDIT",
+  "amount": 150.00,
+  "currency": "USD",
+  "eventTimestamp": "2026-05-15T14:02:11Z"
+}
+
+### Events by account
+GET http://localhost:8080/events?account=acct-123
+
+### Event by id
+GET http://localhost:8080/events/evt-001
+
+### Balance via gateway
+GET http://localhost:8080/accounts/acct-123/balance
+
+### Account details via gateway
+GET http://localhost:8080/accounts/acct-123
+
+### Gateway health
+GET http://localhost:8080/health
+
+### Gateway metrics
+GET http://localhost:8080/actuator/prometheus

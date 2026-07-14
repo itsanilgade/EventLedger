@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: event-ledger
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: account-data
+  namespace: event-ledger
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: event-data
+  namespace: event-ledger
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-service
+  namespace: event-ledger
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: account-service}
+  template:
+    metadata:
+      labels: {app: account-service}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: account-service
+          image: eventledger/account-service:1.0.0
+          ports: [{containerPort: 8081}]
+          env:
+            - {name: SPRING_PROFILES_ACTIVE, value: prod}
+          readinessProbe:
+            httpGet: {path: /actuator/health/readiness, port: 8081}
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8081}
+            initialDelaySeconds: 30
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: account-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: account-service
+  namespace: event-ledger
+spec:
+  selector: {app: account-service}
+  ports: [{port: 8081, targetPort: 8081}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-gateway
+  namespace: event-ledger
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: event-gateway}
+  template:
+    metadata:
+      labels: {app: event-gateway}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: event-gateway
+          image: eventledger/event-gateway:1.0.0
+          ports: [{containerPort: 8080}]
+          env:
+            - {name: SPRING_PROFILES_ACTIVE, value: prod}
+            - {name: ACCOUNT_SERVICE_BASE_URL, value: http://account-service:8081}
+          readinessProbe:
+            httpGet: {path: /actuator/health/readiness, port: 8080}
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8080}
+            initialDelaySeconds: 30
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: event-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-gateway
+  namespace: event-ledger
+spec:
+  type: LoadBalancer
+  selector: {app: event-gateway}
+  ports: [{port: 80, targetPort: 8080}]

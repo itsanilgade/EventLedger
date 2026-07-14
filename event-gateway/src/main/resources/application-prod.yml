@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: ${EVENT_DB_URL:jdbc:h2:file:/data/events;MODE=PostgreSQL}
+  jpa:
+    hibernate:
+      ddl-auto: update
+management:
+  endpoint:
+    health:
+      show-details: never

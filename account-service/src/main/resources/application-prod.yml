@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: ${ACCOUNT_DB_URL:jdbc:h2:file:/data/accounts;MODE=PostgreSQL}
+  jpa:
+    hibernate:
+      ddl-auto: update
+management:
+  endpoint:
+    health:
+      show-details: never
