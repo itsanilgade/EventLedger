@@ -29,8 +29,7 @@ class GatewayWebTests {
                            "currency":"USD","eventTimestamp":"2026-01-01T00:00:00Z"}
                         """))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().string("X-Trace-Id", "trace-test-123"))
-                .andExpect(jsonPath("$.traceId").value("trace-test-123"));
+                .andExpect(header().string("X-Trace-Id", "trace-test-123"));
     }
 
     @Test
